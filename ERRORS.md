@@ -1,4 +1,4 @@
-
+```
 $ nc -l -p 30000 -e /bin/bash 
 bash: line 1: $'echo\r': команда не найдена
 bash: line 2: $'ls\r': команда не найдена
@@ -18,6 +18,5 @@ echo
 ls
 quit
 Connection closed by foreign host.
-
-
+```
 
