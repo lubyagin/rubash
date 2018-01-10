@@ -1,12 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Hint: https://stackoverflow.com/questions/19880190/interactive-input-output-using-python
+# and https://stackoverflow.com/questions/31833897/python-read-from-subprocess-stdout-and-stderr-separately-while-preserving-order
 
 import os
 import fcntl
 
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
+import subprocess
 import errno
+import sys
 
 def setNonBlocking(fd):
     """
@@ -16,24 +19,34 @@ def setNonBlocking(fd):
     flags = flags | os.O_NONBLOCK
     fcntl.fcntl(fd, fcntl.F_SETFL, flags)
 
-p = Popen("/bin/bash", stdin = PIPE, stdout = PIPE, stderr = PIPE, bufsize = 1)
+p = Popen("/bin/bash", shell = True, stdin = PIPE, stdout = PIPE, stderr = STDOUT, bufsize = 1)
 setNonBlocking(p.stdout)
-setNonBlocking(p.stderr)
+#setNonBlocking(p.stderr)
 
 while True:
 	s = raw_input("> ")
-	if len(s.strip()) == 0: continue
+	s = s.rstrip("\\") # Чтобы не уходило в бесконечный цикл
+	ss = s.strip() # когда случайно добавлены пробелы перед exit
+	if ss == "exit": break
+	if len(ss) == 0: continue # ничего кроме пробельных символов нет
 	try:
 		p.stdin.write(s+"\n")
 	except IOError as e:
 		if e.errno == errno.EPIPE:
 			break
+
+	# stdout
 	while True:
+		output = ""
 		try:
 			output = p.stdout.read()
-			print output
+			sys.stdout.write(output)
 		except IOError as e:
 			continue
 		else:
 			break
 
+'''
+Known bugs:
+> ls /root/ (Выводит stderr не сразу)
+'''
