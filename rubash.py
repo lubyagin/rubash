@@ -6,31 +6,56 @@
 
 # MS-DOS interactive cmd.exe: https://stackoverflow.com/a/33061437/966789
 
+# Welcome to screen scraping world
+
+# Если сделать алиасы в питоновском коде, то они будут работать везде - и в винде, и под линукс
+
 import sys
+import os
+import fcntl
+from subprocess import Popen, PIPE, STDOUT
+import errno
+import select
+from multiprocessing import Process
+import time
 
-def windows():
-	print "Windows()"
-	from subprocess import Popen, check_output, PIPE, STDOUT
-
+def Dump(fd):
+	reads = [fd]
 	while True:
-		p = Popen("cmd.exe /k ", shell = True, stdin = PIPE, stdout = PIPE, stderr = STDOUT, bufsize = 1)
-		s = raw_input("> ")
-		#s = s.rstrip("\\") # Чтобы не уходило в бесконечный цикл
-		ss = s.strip() # когда случайно добавлены пробелы перед exit
-		if ss == "exit": break
-		if len(ss) == 0: continue # ничего кроме пробельных символов нет
-		try:
-			p.stdin.write(s+"\r\n")
-		except IOError as e:
-			if e.errno == errno.EPIPE:
-				break
+		ret = select.select(reads, [], [])
+		s = os.read(ret[0][0],4096)
+		sys.stdout.write(s)
+		sys.stdout.flush()
 
-		# stdout
+if sys.platform.startswith("linux"):
+	p = Popen("/bin/bash", shell = True, stdin = PIPE, stdout = PIPE, stderr = STDOUT, bufsize = 1)
+	proc = Process(target=Dump, args=(p.stdout.fileno(),))
+	proc.start()
+
+while True:
+	if sys.platform == "win32":
+		p = Popen("cmd.exe /k ", shell = True, stdin = PIPE, stdout = PIPE, stderr = STDOUT, bufsize = 1)
+	s = raw_input("> ")
+	s = s.rstrip("\\") # Чтобы не уходило в бесконечный цикл
+	ss = s.strip() # когда случайно добавлены пробелы перед exit
+	if ss == "exit":
+		proc.terminate()
+		break
+	if len(ss) == 0: continue # ничего кроме пробельных символов нет
+	try:
+		if sys.platform.startswith("linux"):
+			p.stdin.write(s+"\n")
+		elif sys.platform == "win32":
+			p.stdin.write(s+"\r\n")
+		p.stdin.flush()
+	except IOError as e:
+		if e.errno == errno.EPIPE:
+			break
+
+	# stdout
+	if sys.platform == "win32":
 		while True:
-			#output = ""
 			try:
-				#output = p.stdout.read()
-				#output = check_output(s, shell="True")
 				output,error = p.communicate()
 				sys.stdout.write(output+"\r\n")
 			except IOError as e:
@@ -38,57 +63,4 @@ def windows():
 			else:
 				break
 
-'''
-Known bugs:
-> ls /root/ (Выводит stderr не сразу)
-'''
-
-def linux():
-	print "Linux()"
-	import os
-	import fcntl
-	from subprocess import Popen, PIPE, STDOUT
-	import subprocess
-	import errno
-
-	def setNonBlocking(fd):
-	    """
-	    Set the file description of the given file descriptor to non-blocking.
-	    """
-	    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-	    flags = flags | os.O_NONBLOCK
-	    fcntl.fcntl(fd, fcntl.F_SETFL, flags)
-
-	p = Popen("/bin/bash", shell = True, stdin = PIPE, stdout = PIPE, stderr = STDOUT, bufsize = 1)
-	setNonBlocking(p.stdout)
-	#setNonBlocking(p.stderr)
-
-	while True:
-		s = raw_input("> ")
-		s = s.rstrip("\\") # Чтобы не уходило в бесконечный цикл
-		ss = s.strip() # когда случайно добавлены пробелы перед exit
-		if ss == "exit": break
-		if len(ss) == 0: continue # ничего кроме пробельных символов нет
-		try:
-			p.stdin.write(s+"\n")
-		except IOError as e:
-			if e.errno == errno.EPIPE:
-				break
-
-		# stdout
-		while True:
-			output = ""
-			try:
-				output = p.stdout.read()
-				sys.stdout.write(output)
-			except IOError as e:
-				continue
-			else:
-				break
-
-from sys import platform
-if platform == "win32":
-	windows()
-elif sys.platform.startswith("linux"):
-	linux()
-
+	time.sleep(0.2) # чтобы выхлоп stdout не затирал промт
