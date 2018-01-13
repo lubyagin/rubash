@@ -9,7 +9,7 @@ https://stackoverflow.com/questions/19880190/interactive-input-output-using-pyth
 Применимо для использования "локально". Для удалённого доступа лучше всё-таки использовать ssh.
 Протестирована на Python 2.7 под Debian GNU/Linux 8.6 "Jessie" x86_64.
 
-Аналогичные программы на Python
+Аналогичные программы на Python and Shell
 
 tazhate Russian-Console, https://github.com/tazhate/Russian-Console/blob/master/.bashrc
 
