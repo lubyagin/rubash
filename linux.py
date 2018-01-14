@@ -20,21 +20,23 @@ def Dump(fd):
 
 # https://stackoverflow.com/questions/41542960/run-interactive-bash-with-popen-and-a-dedicated-tty-python
 
-import ctypes
-libc = ctypes.CDLL('libc.so.6')
+# bash: cannot set terminal process group (-1): Inappropriate ioctl for device
+# bash: no job control in this shell
+
+# reopen stdout file descriptor with write mode
+# and 0 as the buffer size (unbuffered)
+# sys.stdout = os.fdopen(sys.stdout.fileno(), "w", 0)
 
 p = Popen(["/bin/bash","--norc","--noprofile","-i"], shell = False,
 	stdin = PIPE, stdout = PIPE, stderr = STDOUT,
 	bufsize = 1,
-	env={"PS1":"\\u:\\h"},
-	preexec_fn=libc.setsid)
+	env={"PS1":"\\u:\\h "},
+	preexec_fn=os.setsid)
 
 proc = Process(target=Dump, args=(p.stdout.fileno(),))
 proc.start()
 
 time.sleep(0.2) # приглашение после этого выхлопа баша:
-# bash: cannot set terminal process group (-1): Inappropriate ioctl for device
-# bash: no job control in this shell
 
 while True:
 	ss = raw_input("> ")
