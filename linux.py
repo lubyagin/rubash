@@ -32,7 +32,9 @@ p = Popen(["/bin/bash","-i"], shell = False,
 proc = Process(target=Dump, args=(p.stdout.fileno(),))
 proc.start()
 
-time.sleep(0.2)
+time.sleep(0.2) # приглашение после этого выхлопа баша:
+# bash: cannot set terminal process group (-1): Inappropriate ioctl for device
+# bash: no job control in this shell
 
 while True:
 	try:
