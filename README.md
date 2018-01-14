@@ -17,3 +17,5 @@ Sultan wrapper, https://github.com/aeroxis/sultan/blob/master/docs/sultan-exampl
 
 ez shell for Windows/Linux/Mac, https://github.com/jerryzhujian9/ez.py/blob/master/ez/easyshell.py
 
+pseudo-terminal example by Thomas Ballinger, https://gist.github.com/thomasballinger/7979808
+
