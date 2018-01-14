@@ -23,10 +23,10 @@ def Dump(fd):
 import ctypes
 libc = ctypes.CDLL('libc.so.6')
 
-p = Popen(["/bin/bash","-i"], shell = False,
+p = Popen(["/bin/bash","--norc","--noprofile","-i"], shell = False,
 	stdin = PIPE, stdout = PIPE, stderr = STDOUT,
 	bufsize = 1,
-	env={"PS1":"\\h"},
+	env={"PS1":"\\u:\\h"},
 	preexec_fn=libc.setsid)
 
 proc = Process(target=Dump, args=(p.stdout.fileno(),))
@@ -37,23 +37,12 @@ time.sleep(0.2) # приглашение после этого выхлопа б
 # bash: no job control in this shell
 
 while True:
-	try:
-		ss = raw_input("> ")
-		if ss == "exit":
-			proc.terminate()
-			break
-		if len(ss) == 0: continue # ничего кроме пробельных символов нет
-	except IOError as e:
-		print repr(e)
+	ss = raw_input("> ")
+	if ss == "exit":
 		proc.terminate()
 		break
-
-	try:
-		p.stdin.write(ss+"\n")
-		p.stdin.flush()
-	except IOError as e:
-		print repr(e)
-		if e.errno == errno.EPIPE:
-			break
+	if len(ss) == 0: continue # ничего кроме пробельных символов нет
+	p.stdin.write(ss+"\n")
+	p.stdin.flush()
 
 	time.sleep(0.2) # чтобы выхлоп stdout не затирал промт
